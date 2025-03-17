@@ -1,0 +1,29 @@
+{
+  "author": "Edward A. Roualdes",
+  "license": "BSD-3-Clause",
+  "type": "module",
+  "scripts": {
+    "build": "tsc && vite build",
+    "doc": "npx typedoc",
+    "pretty": "prettier . --write",
+    "test": "vitest run"
+  },
+  "main": "dist/distributions.cjs.js",
+  "module": "dist/distributions.es.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "prettier": {
+    "tabWidth": 2,
+    "semi": true,
+    "arrowParens": "avoid"
+  },
+  "devDependencies": {
+    "prettier": "3.4.2",
+    "typedoc": "^0.27.6",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.7",
+    "vitest": "^2.1.8"
+  }
+}

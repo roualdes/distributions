@@ -1,0 +1,7 @@
+{
+  "name": "Distributions",
+  "entryPoints": ["src/index.ts"],
+  "out": "docs",
+  "exclude": ["**/node_modules/**", "**/dist/**"],
+  "tsconfig": "./tsconfig.json"
+}

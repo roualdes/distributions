@@ -20,6 +20,26 @@ rayleigh | ❌ | ❌ | ❌ | ❌| ❌ |
 T | ❌ | ❌ | ❌ | ❌| ❌ |
 uniform | ✅ | ✅ | ✅ | ✅ | ✅ |
 
+## build
+
+To build the package, first clone this repository.  Then run
+
+```
+npm run i
+npm run build
+```
+
+This will make a `dist` folder with `distributions.es.js` and
+`distributions.cjs.js`.
+
+## test
+
+Tests are run with
+
+```
+npm run test
+```
+
 ## internals
 
 This package makes use of the following

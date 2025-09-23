@@ -25,7 +25,7 @@ uniform | ✅ | ✅ | ✅ | ✅ | ✅ |
 To build the package, first clone this repository.  Then run
 
 ```
-npm run i
+npm i
 npm run build
 ```
 

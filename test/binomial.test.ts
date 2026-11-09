@@ -35,26 +35,55 @@ test("Binomial: distribution", () => {
 
   expect(
     relative_error(binomial_distribution(3.0, 10.0, 0.7), 0.01059207840000001),
-  ).toBeCloseTo(tolerance);
+  ).toBeLessThan(tolerance);
 
   expect(
     relative_error(binomial_distribution(10, 11.0, 0.9), 0.68618940391),
-  ).toBeCloseTo(tolerance);
+  ).toBeLessThan(tolerance);
 
   expect(
     relative_error(
       binomial_distribution(10, 24.0, 0.875),
       1.2944997659339275e-7,
     ),
-  ).toBeCloseTo(tolerance);
+  ).toBeLessThan(tolerance);
 
   expect(
     relative_error(binomial_distribution(1, 11.0, 0.01), 0.9948202825096849),
-  ).toBeCloseTo(tolerance);
+  ).toBeLessThan(tolerance);
 
   expect(
     relative_error(binomial_distribution(40, 130.0, 0.3), 0.6173916412888664),
-  ).toBeCloseTo(tolerance);
+  ).toBeLessThan(tolerance);
+});
+
+test("Binomial: CDF support and degenerate distributions", () => {
+  expect(binomial_distribution(-0.1, 10, 0.5)).toBe(0);
+  expect(binomial_distribution(0, 10, 0.5)).toBeCloseTo(0.5 ** 10, 14);
+  expect(binomial_distribution(0.9, 10, 0.5)).toBeCloseTo(0.5 ** 10, 14);
+  expect(binomial_distribution(10, 10, 0.5)).toBe(1);
+  expect(binomial_distribution(11, 10, 0.5)).toBe(1);
+  expect(binomial_distribution(0, 0, 0.5)).toBe(1);
+  expect(binomial_distribution(0, 10, 0)).toBe(1);
+  expect(binomial_distribution(9, 10, 1)).toBe(0);
+  expect(binomial_distribution(10, 10, 1)).toBe(1);
+});
+
+test("Binomial: CDF agrees with direct probability sums", () => {
+  for (const K of [0, 1, 2, 10, 11, 24, 50, 130]) {
+    for (const p of [0, 0.001, 0.01, 0.1, 0.3, 0.5, 0.7, 0.95, 0.99, 1]) {
+      let cumulative = 0;
+      let choose = 1;
+      expect(binomial_distribution(-1, K, p)).toBe(0);
+      for (let k = 0; k <= K; k++) {
+        if (k > 0) choose *= (K - k + 1) / k;
+        cumulative += choose * p ** k * (1 - p) ** (K - k);
+        const actual = binomial_distribution(k, K, p);
+        expect(Math.abs(actual - cumulative)).toBeLessThan(1e-12);
+      }
+      expect(binomial_distribution(K + 1, K, p)).toBe(1);
+    }
+  }
 });
 
 test("Binomial: quantile", () => {

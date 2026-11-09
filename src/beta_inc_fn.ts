@@ -258,7 +258,24 @@ function bpser(a: number, b: number, x: number): number {
   if (a0 >= 1.0) {
     z = a * Math.log(x) - betaln(a, b);
     result = Math.exp(z) / a;
-    return result;
+
+    if (result == 0.0 || a <= 0.1 * eps) {
+      return result;
+    }
+
+    sum = 0.0;
+    n = 0.0;
+    c = 1.0;
+    tol = eps / a;
+
+    do {
+      n += 1.0;
+      c *= (1.0 - b / n) * x;
+      w = c / (a + n);
+      sum += w;
+    } while (Math.abs(w) > tol);
+
+    return result * (1.0 + a * sum);
   }
 
   b0 = Math.max(a, b);
@@ -427,7 +444,7 @@ function bup(a: number, b: number, x: number, y: number, n: number): number {
       if (r >= 1.0) {
         k = nm1;
         t = nm1;
-        if (r < t) k = r;
+        if (r < t) k = Math.floor(r);
       }
     } else {
       k = nm1;
@@ -1875,7 +1892,7 @@ export function bratio(a: number, b: number, x: number): number {
           n = 20;
           w1 = bup(b0, a0, y0, x0, n);
           b0 = b0 + n;
-          bgrat(b0, a0, y0, x0, w1, 15.0 * eps);
+          w1 = bgrat(b0, a0, y0, x0, w1, 15.0 * eps);
           w = 0.5 + (0.5 - w1);
         } else {
           n = 20;

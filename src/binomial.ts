@@ -30,7 +30,7 @@ export function binomial_density(x: number, K: number, p: number): number {
  */
 export function binomial_distribution(x: number, K: number, p: number): number {
   const k = Math.floor(x);
-  if (k <= 0) {
+  if (k < 0) {
     return 0;
   }
   if (k >= K) {

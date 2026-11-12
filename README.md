@@ -16,7 +16,7 @@ geometric | ❌ | ❌ | ❌ | ❌| ❌ |
 negative binomial | ❌ | ❌ | ❌ | ❌| ❌ |
 normal | ✅ | ✅ | ✅ |  ✅ | ✅ |
 poisson | ✅ | ✅ | ✅ | ✅ | ✅ |
-rayleigh | ❌ | ❌ | ❌ | ❌| ❌ |
+rayleigh | ✅ | ✅ | ✅ | ✅ | ✅ |
 T | ✅ | ✅ | ✅ | ✅ | ✅ |
 uniform | ✅ | ✅ | ✅ | ✅ | ✅ |
 
@@ -37,6 +37,16 @@ freedom are rejected with `NaN` (an array of `NaN`s for `f_random`).
 The support is `[0, Infinity)`, and quantile probabilities must be in `[0, 1]`;
 the endpoint quantiles are `0` and `Infinity`. Other invalid arguments return
 `NaN`, and an invalid sample count throws `RangeError`.
+
+The Rayleigh distribution is available as `rayleigh_density(x, s)`,
+`rayleigh_distribution(x, s)`, `rayleigh_log_density(x, s)`,
+`rayleigh_quantile(p, s)`, and `rayleigh_random(N, s)`. It uses zero location
+and a positive, finite scale `s`, with density
+`(x / s²) * exp(-x² / (2s²))` for `x >= 0`.
+Quantile probabilities must be in `[0, 1]`; the endpoint quantiles are `0`
+and `Infinity`. Invalid arguments return `NaN` (an array of `NaN`s for an
+invalid scale in `rayleigh_random`), and an invalid sample count throws
+`RangeError`.
 
 ## build
 

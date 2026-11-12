@@ -55,6 +55,14 @@ export {
 } from "./poisson";
 
 export {
+  rayleigh_density,
+  rayleigh_distribution,
+  rayleigh_log_density,
+  rayleigh_quantile,
+  rayleigh_random,
+} from "./rayleigh";
+
+export {
   t_density,
   t_distribution,
   t_log_density,

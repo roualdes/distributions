@@ -39,6 +39,22 @@ export {
 } from "./gamma";
 
 export {
+  geometric_density,
+  geometric_distribution,
+  geometric_log_density,
+  geometric_quantile,
+  geometric_random,
+} from "./geometric";
+
+export {
+  negative_binomial_density,
+  negative_binomial_distribution,
+  negative_binomial_log_density,
+  negative_binomial_quantile,
+  negative_binomial_random,
+} from "./negative_binomial";
+
+export {
   normal_density,
   normal_distribution,
   normal_log_density,

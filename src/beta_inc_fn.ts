@@ -522,9 +522,10 @@ function bfrac(
   for (let iteration = 0; iteration < 10000; iteration++) {
     n = n + 1.0;
     let t = n / a;
-    let w = n * (b - n) * x;
+    // Multiply by x first: b can be huge while b*x is ordinary.
+    let w = n * x * (b - n);
     let e = a / s;
-    let alpha = p * (p + c0) * e * e * (w * x);
+    let alpha = p * e * ((p + c0) * e) * x * w;
     e = (1.0 + t) / (c1 + t + t);
     let beta = n + w / s + e * (c + n * yp1);
     p = 1.0 + t;

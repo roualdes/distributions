@@ -5,48 +5,24 @@ associated with statistical distributions.
 
 ## available functions
 
-name | density | distributon | log-density | random | quantile
------|---------|-------------|-------------|--------|---------
-beta | ✅ | ✅ | ✅ | ✅ | ✅ |
-binomial | ✅ | ✅ | ✅ | ✅ | ✅ |
-exponential | ✅ | ✅ | ✅ | ✅ | ✅ |
-F | ✅ | ✅ | ✅ | ✅ | ✅ |
-gamma | ✅ | ✅ | ✅ | ✅ | ✅ |
-geometric | ❌ | ❌ | ❌ | ❌| ❌ |
-negative binomial | ❌ | ❌ | ❌ | ❌| ❌ |
-normal | ✅ | ✅ | ✅ |  ✅ | ✅ |
-poisson | ✅ | ✅ | ✅ | ✅ | ✅ |
-rayleigh | ✅ | ✅ | ✅ | ✅ | ✅ |
-T | ✅ | ✅ | ✅ | ✅ | ✅ |
-uniform | ✅ | ✅ | ✅ | ✅ | ✅ |
+For each distribution
 
-The central Student's t distribution is available as `t_density(x, df)`,
-`t_distribution(x, df)`, `t_log_density(x, df)`, `t_quantile(p, df)`, and
-`t_random(N, df)`. Here `df` is a positive number of degrees of freedom,
-including fractional values; `Infinity` gives the standard normal limit.
-These functions use zero location and unit scale. The quantile accepts
-probabilities in `[0, 1]`, returning infinities at the endpoints. Invalid
-arguments return `NaN` (an array of `NaN`s for invalid `df` in `t_random`);
-an invalid sample count throws `RangeError`.
+* beta
+* binomial
+* exponential
+* F
+* gamma
+* geometric
+* negative binomial
+* normal
+* poisson
+* rayleigh
+* T
+* uniform
 
-The central F distribution is available as `f_density(x, df1, df2)`,
-`f_distribution(x, df1, df2)`, `f_log_density(x, df1, df2)`,
-`f_quantile(p, df1, df2)`, and `f_random(N, df1, df2)`.
-Both degrees of freedom must be positive and finite; infinite degrees of
-freedom are rejected with `NaN` (an array of `NaN`s for `f_random`).
-The support is `[0, Infinity)`, and quantile probabilities must be in `[0, 1]`;
-the endpoint quantiles are `0` and `Infinity`. Other invalid arguments return
-`NaN`, and an invalid sample count throws `RangeError`.
-
-The Rayleigh distribution is available as `rayleigh_density(x, s)`,
-`rayleigh_distribution(x, s)`, `rayleigh_log_density(x, s)`,
-`rayleigh_quantile(p, s)`, and `rayleigh_random(N, s)`. It uses zero location
-and a positive, finite scale `s`, with density
-`(x / s²) * exp(-x² / (2s²))` for `x >= 0`.
-Quantile probabilities must be in `[0, 1]`; the endpoint quantiles are `0`
-and `Infinity`. Invalid arguments return `NaN` (an array of `NaN`s for an
-invalid scale in `rayleigh_random`), and an invalid sample count throws
-`RangeError`.
+there exists a `*_log_density`, `*_density`, (cumulative)
+`*_distribution`, `*_quantile` function, and for random number
+generation `*_random`.
 
 ## build
 

@@ -87,3 +87,11 @@ test("Incomplete beta: tiny-shape complement retains the digamma correction", ()
     Math.abs(bratio_complement(1e-16, 0.25, 0.1) / expected - 1),
   ).toBeLessThan(1e-13);
 });
+
+test("Incomplete beta: huge shape times tiny x does not overflow internally", () => {
+  const bx = Number.MAX_VALUE * Number.MIN_VALUE;
+  const expected = 0.5 * bx * bx; // I_x(2,b) ~ (b*x)^2/2 in this regime.
+  expect(
+    Math.abs(bratio(2, Number.MAX_VALUE, Number.MIN_VALUE) / expected - 1),
+  ).toBeLessThan(1e-12);
+});

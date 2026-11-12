@@ -700,7 +700,7 @@ function brcomp(a: number, b: number, x: number, y: number): number {
  * @param {number} x - Input value
  * @returns {number} - Result of x - ln(1 + x)
  */
-function rlog1(x: number): number {
+export function rlog1(x: number): number {
   // binomial_distribution(40, 130.0, 0.3) partially tests this fn
 
   const A = 0.0566749439387324;

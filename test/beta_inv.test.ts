@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { betaln, bratio, bratio_complement } from "../src/beta_inc_fn";
-import { betain, xinbeta } from "../src/beta_inv_fn";
+import { betain, xinbeta, xinbeta_complement } from "../src/beta_inv_fn";
 import { beta_quantile } from "../src/beta";
 
 // R 4.4.1 qbeta reference values; no runtime dependency on R.
@@ -80,4 +80,24 @@ test("Inverse beta: endpoints and invalid parameters terminate", () => {
   for (const bad of [-1, 2, NaN, Infinity, -Infinity]) {
     expect(xinbeta(1, 1, bad)).toBeNaN();
   }
+});
+
+test("Inverse beta: complementary probabilities preserve small roots", () => {
+  // Beta(a,1) has survival 1-x^a. Supplying this survival directly preserves
+  // information that is lost in the subtraction 1 - survival.
+  for (const a of [0.5, 1, 5, 1000]) {
+    for (const p of [1e-100, 1e-10, 0.025, 0.5, 0.9]) {
+      const x = xinbeta_complement(a, 1, p);
+      const expected = Math.exp(Math.log1p(-p) / a);
+      expect(Math.abs(x / expected - 1)).toBeLessThan(1e-12);
+    }
+  }
+  const x = xinbeta_complement(0.5, 500000, 1e-100);
+  expect(Math.abs(bratio_complement(0.5, 500000, x) / 1e-100 - 1)).toBeLessThan(
+    1e-11,
+  );
+  expect(xinbeta_complement(2, 3, 0)).toBe(1);
+  expect(xinbeta_complement(2, 3, 1)).toBe(0);
+  expect(xinbeta_complement(2, 3, NaN)).toBeNaN();
+  expect(xinbeta_complement(Infinity, 3, 0.5)).toBeNaN();
 });

@@ -23,6 +23,14 @@ export {
 } from "./exponential";
 
 export {
+  f_density,
+  f_distribution,
+  f_log_density,
+  f_quantile,
+  f_random,
+} from "./f";
+
+export {
   gamma_density,
   gamma_distribution,
   gamma_log_density,

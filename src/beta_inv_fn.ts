@@ -2,6 +2,24 @@ import { betaln, bratio, bratio_complement } from "./beta_inc_fn";
 
 /** Invert the regularized incomplete beta ratio for finite, positive shapes. */
 export function xinbeta(p: number, q: number, alpha: number): number {
+  return inverse_beta(p, q, alpha, false);
+}
+
+/** Invert 1 - I_x(p,q) without rounding a small upper probability away. */
+export function xinbeta_complement(
+  p: number,
+  q: number,
+  alpha: number,
+): number {
+  return inverse_beta(p, q, alpha, true);
+}
+
+function inverse_beta(
+  p: number,
+  q: number,
+  alpha: number,
+  upperProbabilityInput: boolean,
+): number {
   if (
     !Number.isFinite(p) ||
     p <= 0 ||
@@ -13,17 +31,24 @@ export function xinbeta(p: number, q: number, alpha: number): number {
   ) {
     return Number.NaN;
   }
-  if (alpha === 0 || alpha === 1) return alpha;
+  if (alpha === 0 || alpha === 1)
+    return upperProbabilityInput ? 1 - alpha : alpha;
 
   // Keep the root in [0, 0.5] so reflection cannot erase a small result.
-  const reflect = alpha > bratio(p, q, 0.5);
-  const a = reflect ? 1 - alpha : alpha;
+  const reflect = upperProbabilityInput
+    ? alpha < bratio_complement(p, q, 0.5)
+    : alpha > bratio(p, q, 0.5);
+  const lowerProbability = upperProbabilityInput ? 1 - alpha : alpha;
+  const upperProbability = upperProbabilityInput ? alpha : 1 - alpha;
+  const a = reflect ? upperProbability : lowerProbability;
   const pp = reflect ? q : p;
   const qq = reflect ? p : q;
   // Independently choose the smaller probability tail. The paired-coordinate
   // CDF preserves it even when 1 - value rounds to one.
-  const upperTail = reflect ? alpha < 0.5 : alpha > 0.5;
-  const target = upperTail ? (reflect ? alpha : 1 - alpha) : a;
+  const upperTail = reflect
+    ? lowerProbability < upperProbability
+    : upperProbability < lowerProbability;
+  const target = Math.min(alpha, 1 - alpha);
   const residual = (x: number): number =>
     upperTail
       ? target - bratio_complement(pp, qq, x)

@@ -10,7 +10,7 @@ name | density | distributon | log-density | random | quantile
 beta | ✅ | ✅ | ✅ | ✅ | ✅ |
 binomial | ✅ | ✅ | ✅ | ✅ | ✅ |
 exponential | ✅ | ✅ | ✅ | ✅ | ✅ |
-F | ❌ | ❌ | ❌ | ❌| ❌ |
+F | ✅ | ✅ | ✅ | ✅ | ✅ |
 gamma | ✅ | ✅ | ✅ | ✅ | ✅ |
 geometric | ❌ | ❌ | ❌ | ❌| ❌ |
 negative binomial | ❌ | ❌ | ❌ | ❌| ❌ |
@@ -28,6 +28,15 @@ These functions use zero location and unit scale. The quantile accepts
 probabilities in `[0, 1]`, returning infinities at the endpoints. Invalid
 arguments return `NaN` (an array of `NaN`s for invalid `df` in `t_random`);
 an invalid sample count throws `RangeError`.
+
+The central F distribution is available as `f_density(x, df1, df2)`,
+`f_distribution(x, df1, df2)`, `f_log_density(x, df1, df2)`,
+`f_quantile(p, df1, df2)`, and `f_random(N, df1, df2)`.
+Both degrees of freedom must be positive and finite; infinite degrees of
+freedom are rejected with `NaN` (an array of `NaN`s for `f_random`).
+The support is `[0, Infinity)`, and quantile probabilities must be in `[0, 1]`;
+the endpoint quantiles are `0` and `Infinity`. Other invalid arguments return
+`NaN`, and an invalid sample count throws `RangeError`.
 
 ## build
 

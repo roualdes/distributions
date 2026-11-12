@@ -17,8 +17,17 @@ negative binomial | ❌ | ❌ | ❌ | ❌| ❌ |
 normal | ✅ | ✅ | ✅ |  ✅ | ✅ |
 poisson | ✅ | ✅ | ✅ | ✅ | ✅ |
 rayleigh | ❌ | ❌ | ❌ | ❌| ❌ |
-T | ❌ | ❌ | ❌ | ❌| ❌ |
+T | ✅ | ✅ | ✅ | ✅ | ✅ |
 uniform | ✅ | ✅ | ✅ | ✅ | ✅ |
+
+The central Student's t distribution is available as `t_density(x, df)`,
+`t_distribution(x, df)`, `t_log_density(x, df)`, `t_quantile(p, df)`, and
+`t_random(N, df)`. Here `df` is a positive number of degrees of freedom,
+including fractional values; `Infinity` gives the standard normal limit.
+These functions use zero location and unit scale. The quantile accepts
+probabilities in `[0, 1]`, returning infinities at the endpoints. Invalid
+arguments return `NaN` (an array of `NaN`s for invalid `df` in `t_random`);
+an invalid sample count throws `RangeError`.
 
 ## build
 

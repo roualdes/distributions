@@ -47,6 +47,14 @@ export {
 } from "./poisson";
 
 export {
+  t_density,
+  t_distribution,
+  t_log_density,
+  t_quantile,
+  t_random,
+} from "./t";
+
+export {
   uniform_density,
   uniform_distribution,
   uniform_log_density,

@@ -1,176 +1,106 @@
-import { log_gamma } from "./log_gamma_fn";
+import { betaln, bratio, bratio_complement } from "./beta_inc_fn";
 
+/** Invert the regularized incomplete beta ratio for finite, positive shapes. */
 export function xinbeta(p: number, q: number, alpha: number): number {
-  const beta = log_gamma(p) + log_gamma(q) - log_gamma(p + q);
-
-  let a;
-  let acu;
-  let adj;
-  let fpu;
-  let g;
-  let h;
-  let iex;
-  let indx;
-  let pp;
-  let prev;
-  let qq;
-  let r;
-  let s;
-  let sae = -37.0;
-  let sq;
-  let t;
-  let tx;
-  let value;
-  let w;
-  let xin;
-  let y;
-  let yprev;
-
-  fpu = Math.pow(10.0, sae);
-
-  value = alpha;
-
-  // Test for admissibility of parameters.
-  if (p <= 0.0) {
+  if (
+    !Number.isFinite(p) ||
+    p <= 0 ||
+    !Number.isFinite(q) ||
+    q <= 0 ||
+    !Number.isFinite(alpha) ||
+    alpha < 0 ||
+    alpha > 1
+  ) {
     return Number.NaN;
   }
+  if (alpha === 0 || alpha === 1) return alpha;
 
-  if (q <= 0.0) {
-    return Number.NaN;
-  }
+  // Keep the root in [0, 0.5] so reflection cannot erase a small result.
+  const reflect = alpha > bratio(p, q, 0.5);
+  const a = reflect ? 1 - alpha : alpha;
+  const pp = reflect ? q : p;
+  const qq = reflect ? p : q;
+  // Independently choose the smaller probability tail. The paired-coordinate
+  // CDF preserves it even when 1 - value rounds to one.
+  const upperTail = reflect ? alpha < 0.5 : alpha > 0.5;
+  const target = upperTail ? (reflect ? alpha : 1 - alpha) : a;
+  const residual = (x: number): number =>
+    upperTail
+      ? target - bratio_complement(pp, qq, x)
+      : bratio(pp, qq, x) - target;
+  // The specialized log-beta routine avoids cancellation of large log-gammas.
+  const beta = betaln(pp, qq);
+  const finish = (x: number): number => (reflect ? 1 - x : x);
 
-  if (alpha < 0.0 || 1.0 < alpha) {
-    return Number.NaN;
-  }
-
-  // If answer is easy to determine, return immediately.
-  if (alpha == 0.0) {
-    return 0.0;
-  }
-
-  if (alpha == 1.0) {
-    return 1.0;
-  }
-
-  // Change tail if necessary.
-  if (0.5 < alpha) {
-    a = 1.0 - alpha;
-    pp = q;
-    qq = p;
-    indx = 1;
+  // Initial approximation from AS 109. Keep the logarithm of the probability
+  // instead of squaring it, which would underflow in extreme tails.
+  let r = Math.sqrt(-2 * Math.log(a));
+  const y = r - (2.30753 + 0.27061 * r) / (1 + (0.99229 + 0.04481 * r) * r);
+  let value: number;
+  if (pp > 1 && qq > 1) {
+    r = (y * y - 3) / 6;
+    const s = 1 / (2 * pp - 1);
+    const t = 1 / (2 * qq - 1);
+    const h = 2 / (s + t);
+    const w = (y * Math.sqrt(h + r)) / h - (t - s) * (r + 5 / 6 - 2 / (3 * h));
+    value = pp / (pp + qq * Math.exp(2 * w));
   } else {
-    a = alpha;
-    pp = p;
-    qq = q;
-    indx = 0;
-  }
-
-  // Calculate the initial approximation.
-  r = Math.sqrt(-Math.log(a * a));
-
-  y = r - (2.30753 + 0.27061 * r) / (1.0 + (0.99229 + 0.04481 * r) * r);
-
-  if (1.0 < pp && 1.0 < qq) {
-    r = (y * y - 3.0) / 6.0;
-    s = 1.0 / (pp + pp - 1.0);
-    t = 1.0 / (qq + qq - 1.0);
-    h = 2.0 / (s + t);
-    w =
-      (y * Math.sqrt(h + r)) / h - (t - s) * (r + 5.0 / 6.0 - 2.0 / (3.0 * h));
-    value = pp / (pp + qq * Math.exp(w + w));
-  } else {
-    r = qq + qq;
-    t = 1.0 / (9.0 * qq);
-    t = r * Math.pow(1.0 - t + y * Math.sqrt(t), 3);
-
-    if (t <= 0.0) {
-      value = 1.0 - Math.exp((Math.log((1.0 - a) * qq) + beta) / qq);
+    r = 2 * qq;
+    let t = 1 / (9 * qq);
+    t = r * (1 - t + y * Math.sqrt(t)) ** 3;
+    if (t <= 0) {
+      value = -Math.expm1((Math.log1p(-a) + Math.log(qq) + beta) / qq);
     } else {
-      t = (4.0 * pp + r - 2.0) / t;
-
-      if (t <= 1.0) {
-        value = Math.exp((Math.log(a * pp) + beta) / pp);
-      } else {
-        value = 1.0 - 2.0 / (t + 1.0);
-      }
+      t = (4 * pp + r - 2) / t;
+      value =
+        t <= 1
+          ? Math.exp((Math.log(a) + Math.log(pp) + beta) / pp)
+          : 1 - 2 / (t + 1);
     }
   }
 
-  // Solve for X by a modified Newton-Raphson method, using the function BETAIN.
-  r = 1.0 - pp;
-  t = 1.0 - qq;
-  yprev = 0.0;
-  sq = 1.0;
-  prev = 1.0;
+  // Near zero, I_x(p,q) ~ x^p / (p B(p,q)). This estimate also preserves
+  // representable roots far below the old fixed 0.0001 starting bound.
+  const logTail = (Math.log(a) + Math.log(pp) + beta) / pp;
+  if (logTail < Math.log(Number.MIN_VALUE) - Math.LN2) return finish(0);
+  const tail = Math.exp(logTail);
+  if (a < 1 && tail < 0.1 && qq * tail < 0.1) value = tail;
+  if (a === 1) value = pp / (pp + qq);
+  if (!Number.isFinite(value)) value = pp / (pp + qq);
+  value = Math.max(Number.MIN_VALUE, Math.min(0.5, value));
 
-  if (value < 0.0001) {
-    value = 0.0001;
-  }
+  let lower = 0;
+  let upper = 0.5;
+  for (let iteration = 0; iteration < 2048; iteration++) {
+    const error = residual(value);
+    if (!Number.isFinite(error)) return Number.NaN;
+    if (Math.abs(error) <= 8 * Number.EPSILON * target) return finish(value);
 
-  if (0.9999 < value) {
-    value = 0.9999;
-  }
+    if (error < 0) lower = value;
+    else upper = value;
 
-  iex = Math.max(-5.0 / pp / pp - 1.0 / Math.pow(a, 0.2) - 13.0, sae);
-
-  acu = Math.pow(10.0, iex);
-
-  outer: while (true) {
-    y = betain(value, pp, qq, beta);
-
-    if (Number.isNaN(y)) {
-      return Number.NaN;
+    // Compute the Newton correction in log space so that neither the density
+    // nor its reciprocal needs to be representable on its own.
+    const step =
+      Math.sign(error) *
+      Math.exp(
+        Math.log(Math.abs(error)) +
+          beta +
+          (1 - pp) * Math.log(value) +
+          (1 - qq) * Math.log1p(-value),
+      );
+    let next = value - step;
+    if (!(next > lower && next < upper)) next = lower + (upper - lower) / 2;
+    if (next === value || next === lower || next === upper) {
+      // The remaining bracket has no representable interior point.
+      const lowerError = Math.abs(residual(lower));
+      const upperError = Math.abs(residual(upper));
+      return finish(lowerError < upperError ? lower : upper);
     }
-
-    xin = value;
-    y = (y - a) * Math.exp(beta + r * Math.log(xin) + t * Math.log(1.0 - xin));
-
-    if (y * yprev <= 0.0) {
-      prev = Math.max(sq, fpu);
-    }
-
-    g = 1.0;
-
-    while (true) {
-      // Choose damping factor.
-      while (true) {
-        adj = g * y;
-        sq = adj * adj;
-
-        if (sq < prev) {
-          tx = value - adj;
-
-          if (tx >= 0.0 && tx <= 1.0) {
-            break;
-          }
-        }
-        g = g / 3.0;
-      }
-
-      // Check whether current estimate is acceptable.
-      if (prev <= acu || y * y <= acu) {
-        break outer;
-      }
-
-      if (tx != 0.0 && tx != 1.0) {
-        break;
-      }
-      g = g / 3.0;
-    }
-
-    if (tx == value) {
-      break;
-    }
-
-    value = tx;
-    yprev = y;
+    value = next;
   }
-
-  if (indx) {
-    value = 1.0 - value;
-  }
-
-  return value;
+  // Never return an unconverged estimate as a successful quantile.
+  return Number.NaN;
 }
 
 /**
@@ -203,12 +133,12 @@ export function betain(x: number, p: number, q: number, beta: number): number {
 
   value = x;
 
-  if (p <= 0.0 || q <= 0.0) {
-    return value;
+  if (!Number.isFinite(p) || !Number.isFinite(q) || p <= 0.0 || q <= 0.0) {
+    return Number.NaN;
   }
 
-  if (x < 0.0 || 1.0 < x) {
-    return value;
+  if (!Number.isFinite(x) || !Number.isFinite(beta) || x < 0.0 || 1.0 < x) {
+    return Number.NaN;
   }
 
   if (x == 0.0 || x == 1.0) {
@@ -234,7 +164,8 @@ export function betain(x: number, p: number, q: number, beta: number): number {
   term = 1.0;
   ai = 1.0;
   value = 1.0;
-  ns = qq + cx * psq;
+  // NS is an integer in AS 63; a fractional value never reaches zero.
+  ns = Math.floor(qq + cx * psq);
 
   rx = xx / cx;
   temp = qq - ai;
@@ -242,7 +173,7 @@ export function betain(x: number, p: number, q: number, beta: number): number {
     rx = xx;
   }
 
-  while (true) {
+  for (let iteration = 0; iteration < 10000; iteration++) {
     term = (term * temp * rx) / (pp + ai);
     value = value + term;
     temp = Math.abs(term);
@@ -256,7 +187,7 @@ export function betain(x: number, p: number, q: number, beta: number): number {
       if (indx) {
         value = 1.0 - value;
       }
-      break;
+      return value;
     }
 
     ai = ai + 1.0;
@@ -273,5 +204,5 @@ export function betain(x: number, p: number, q: number, beta: number): number {
     }
   }
 
-  return value;
+  return Number.NaN;
 }

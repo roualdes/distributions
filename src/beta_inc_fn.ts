@@ -23,10 +23,12 @@ function exparg(l: number): number {
   }
 
   let m;
+  // Use the double-precision exponent limits (the earlier entries describe
+  // single precision and incorrectly discard representable small tails).
   if (l == 0) {
-    m = ipmpar(7);
+    m = ipmpar(10);
   } else {
-    m = ipmpar(6) - 1;
+    m = ipmpar(9) - 1;
   }
 
   return 0.99999 * (m * lnb);
@@ -159,25 +161,25 @@ function psi(xx: number): number {
       }
 
       /* Compute fractional part */
-      let nq = w;
+      let nq = Math.floor(w);
       w = w - nq;
-      nq = w * 4.0;
+      nq = Math.floor(w * 4.0);
       w = 4.0 * (w - nq * 0.25);
 
       /* Adjust argument and determine sign */
-      let n = nq / 2;
+      let n = Math.floor(nq / 2);
       if (n + n != nq) {
         w = 1.0 - w;
       }
 
       let z = piov4 * w;
-      let m = n / 2;
+      let m = Math.floor(n / 2);
       if (m + m != n) {
         sgn = -sgn;
       }
 
-      n = (nq + 1) / 2;
-      m = n / 2;
+      n = Math.floor((nq + 1) / 2);
+      m = Math.floor(n / 2);
       m = m + m;
 
       if (m == n) {
@@ -517,7 +519,7 @@ function bfrac(
   let r = c1 / c;
 
   // Continued fraction calculation
-  while (true) {
+  for (let iteration = 0; iteration < 10000; iteration++) {
     n = n + 1.0;
     let t = n / a;
     let w = n * (b - n) * x;
@@ -537,7 +539,7 @@ function bfrac(
 
     let r0 = r;
     r = anp1 / bnp1;
-    if (Math.abs(r - r0) <= eps * r) break;
+    if (Math.abs(r - r0) <= eps * r) return result * r;
 
     an = an / bnp1;
     bn = bn / bnp1;
@@ -545,7 +547,7 @@ function bfrac(
     bnp1 = 1.0;
   }
 
-  return result * r;
+  return Number.NaN;
 }
 
 /**
@@ -747,7 +749,7 @@ function rlog1(x: number): number {
  * @param {number} b0 - Second parameter
  * @returns {number} Logarithm of the Beta function
  */
-function betaln(a0: number, b0: number): number {
+export function betaln(a0: number, b0: number): number {
   // binomial_distribution(3.0, 10.0, 0.7) partially tests this fn
 
   const e = LOG_SQRT_2PI;
@@ -1322,7 +1324,7 @@ function grat1(a: number, x: number, r: number, eps: number) {
       return 0.0;
     }
 
-    return 0.5 + (0.5 - q);
+    return q;
   } else {
     // Continued fraction expansion
     a2nm1 = 1.0;
@@ -1461,7 +1463,7 @@ function erfc1(ind: number, x: number): number {
     w = x * x;
     t = Math.floor(w); // Integer part of w
     e = w - t; // Fractional part of w
-    result = (0.5 + (0.5 - e)) * Math.exp(-t) * result;
+    result = Math.exp(-e) * Math.exp(-t) * result;
 
     if (x < 0.0) {
       result = 2.0 - result;
@@ -1805,11 +1807,27 @@ function esum(mu: number, x: number): number {
  * @param {number} a - First parameter of the beta function
  * @param {number} b - Second parameter of the beta function
  * @param {number} x - Value between 0 and 1
- * @param {number} y - Equal to 1 - x
  * @returns {number} The value of the incomplete beta function IX(A,B)
  */
 export function bratio(a: number, b: number, x: number): number {
-  const y = 1 - x;
+  return beta_ratio(a, b, x, 1 - x);
+}
+
+/** Evaluate 1 - I_x(a,b) directly, preserving a small complementary tail. */
+export function bratio_complement(a: number, b: number, x: number): number {
+  return beta_ratio(b, a, 1 - x, x);
+}
+
+function beta_ratio(a: number, b: number, x: number, y: number): number {
+  // Reject nonfinite arguments before entering the numerical iterations.
+  if (
+    !Number.isFinite(a) ||
+    !Number.isFinite(b) ||
+    !Number.isFinite(x) ||
+    !Number.isFinite(y)
+  ) {
+    return Number.NaN;
+  }
   const eps = Number.EPSILON;
 
   if (a < 0.0 || b < 0.0) {
@@ -1870,7 +1888,7 @@ export function bratio(a: number, b: number, x: number): number {
   let y0 = y;
   let lambda = 0;
   let w = 0;
-  let w1 = 0;
+  let w1: number | undefined;
   let n = 0;
 
   if (Math.min(a0, b0) <= 1.0) {
@@ -1886,7 +1904,7 @@ export function bratio(a: number, b: number, x: number): number {
         } else if (x0 >= 0.3) {
           w1 = bpser(b0, a0, y0);
           w = 0.5 + (0.5 - w1);
-        } else if (x0 >= 0.1 || (x0 * b0) ** a0 <= 0.7) {
+        } else if (x0 < 0.1 && (x0 * b0) ** a0 <= 0.7) {
           w = bpser(a0, b0, x0);
         } else if (b0 > 15.0) {
           n = 20;
@@ -1936,7 +1954,7 @@ export function bratio(a: number, b: number, x: number): number {
         } else if (x0 >= 0.3) {
           w1 = bpser(b0, a0, y0);
           w = 0.5 + (0.5 - w1);
-        } else if (x0 >= 0.1 || (x0 * b0) ** a0 <= 0.7) {
+        } else if (x0 < 0.1 && (x0 * b0) ** a0 <= 0.7) {
           w = bpser(a0, b0, x0);
         } else if (b0 > 15.0) {
           n = 20;
@@ -1986,7 +2004,12 @@ export function bratio(a: number, b: number, x: number): number {
       lambda = Math.abs(lambda);
     }
 
-    if (b0 < 40.0 && b0 * x0 <= 0.7) {
+    // In a far tail, reducing b can underflow the intermediate recurrence
+    // even when the final probability is representable. The continued
+    // fraction evaluates that tail without reducing either shape.
+    if (b0 < 40.0 && lambda > 100.0) {
+      w = bfrac(a0, b0, x0, y0, lambda, 15.0 * eps);
+    } else if (b0 < 40.0 && b0 * x0 <= 0.7) {
       w = bpser(a0, b0, x0);
     } else if (b0 < 40.0) {
       n = Math.floor(b0);
@@ -2021,7 +2044,9 @@ export function bratio(a: number, b: number, x: number): number {
   }
 
   if (ind === 1) {
-    w = 0.5 + (0.5 - w);
+    // Some branches already evaluated this tail directly. Subtracting their
+    // complement from one again would erase small, representable probabilities.
+    w = w1 === undefined ? 0.5 + (0.5 - w) : w1;
   }
 
   return w;
